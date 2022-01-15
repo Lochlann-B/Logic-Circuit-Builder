@@ -5,6 +5,8 @@ Uses QM method for logic simplification. Circles on the left are inputs, and cir
 
 When entering an expression into the simplifier, use **&** or **\*** for logical AND, and **|** or **+** for logical OR. Note that there is no order of operations (e.g. a&b+c is interpreted as a&(b+c)), so use brackets generously.
 
+Website at https://lochlann-b.github.io/Logic-Circuit-Builder/
+
 ### Keyboard shortcuts
 **D** - delete the current gate you are hovering over and all associated connections.
 
