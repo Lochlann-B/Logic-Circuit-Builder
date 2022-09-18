@@ -3,85 +3,30 @@ html {
     font-family:Verdana, Geneva, Tahoma, sans-serif;
 }
 
-body {
-    margin: 0;
-    padding: 0;
+.nomargin {
+    margin: 0px !important;
 }
 
-.button {
-    padding: 1% 1%;
-    color: white;
-    font-family: 'fira sans';
-    background-color: #3a3a3a;
-    cursor: pointer;
-    margin: 2% 10px;
+.nopadding {
+    padding: 0px !important;
 }
 
-#binButton {
-    position:fixed;
-    right: 2%;
-    top: 2%;
+.sidebar {
+    background-color: #333333;
 }
 
-#bin {
-    color:white;
-    z-index: 1;
-    width: 200%;
-    height: 200%;
+.centered {
+    left: 0px;
+    right: 0px;
 }
 
-.input {
-    width: 60%;
+#output {
+    background-color: #ffffff;
+    word-break: break-word !important;
+    margin: 5px;
+    border-radius: 5px;
 }
 
-canvas {
-    display: flex;
-    align-items: flex-end;
-    border: 2px solid white;
-    float: right;
-    width: 90%;
-    height: 85%;
-}
-
-.bottomInput {
-    padding: 1% 1%;
-    color: black;
-    background-color: lightgrey;
-    cursor: text;
-    margin: 10px 10px 10px 10px;
-}
-
-.output {
-    background-color: lightgrey;
-    margin: 10px 10% 10px 10px;
-    width: 40%;
-    height: 50%;
-    border-radius: 5%;
-    text-align: center;
-    color: slategray;
-}
-
-.answer {
-    color:darkslategrey;
-}
-
-.bottomBar {
-    display: flex;
-    align-items: center;
-    bottom: 0;
-    position: fixed;
-    background-color: darkgrey;
-    width: 100%;
-    height: 15%;
-}
-
-.gateSelect {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    background-color:rgb(83, 83, 83);
-    height: 85%;
-    width: 10%;
-    top: 0;
-    justify-content: space-evenly;
+#outputText {
+    word-wrap: break-word;
 }

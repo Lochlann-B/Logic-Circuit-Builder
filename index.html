@@ -2,46 +2,82 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>We don't know if it's true</title>
     <link href="styles/style.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Sans&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet">
   </head>
-  <body>
-    <div class="drawingArea">
-      <canvas id="drawingCanvas"></canvas>
-      <div id="binButton"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill" viewBox="0 0 16 16" id="bin">
-        <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/>
-      </svg></div>
-    </div>
-    <div class="gateSelect" id="gateSelector">
-      <button type="button" id="addInput" class="button">Add Input</button>
-      <button type="button" id="addOutput" class="button">Add Output</button>
-      <button type="button" id="not" class="gateButton button">NOT Gate</button>
-      <button type="button" id="and" class="gateButton button">AND Gate</button>
-      <button type="button" id="or" class="gateButton button">OR Gate</button>
-      <button type="button" id="nand" class="gateButton button">NAND Gate</button>
-      <button type="button" id="nor" class="gateButton button">NOR Gate</button>
-      <button type="button" id="xor" class="gateButton button">XOR Gate</button>
-      <button type="button" id="evaluate" class="button">Evaluate Outputs</button>
-    </div>
+  <body style="overflow: hidden;">
 
-    <div class="bottomBar">
-      <div class="input">
-      <form>
-        <input type="text" placeholder="Enter boolean expression: " id="expression" class="bottomInput">
-        <button type="button" id="submitSOP" class="button">Simplify (SOP)</button>
-        <button type="button" id="submitPOS" class="button">Simplify (POS)</button>
-        <button type="button" id="drawExpression" class="button">Draw Boolean Expression</button>
-      </form>
-    </div>
-        <div id="output" class="output"><p class="" id="outputText"><em>Output</em></p></div>
+    <div class="row g-0">
+      <div class="col-2 sidebar" id="sidebar">
+        
+        <ul class="gateSelect nav flex-column h-100 justify-content-around" id="gateSelector">
+
+
+          <li class="nav-item text-center"><input type="text" placeholder="Enter boolean expression: " id="expression" class="bottomInput nav-item form-control"></li>
+
+          <li class="nav-item">
+            <div class="d-flex justify-content-around">
+              <div><button type="button" id="submitSOP" class="button btn btn-success nav-item">Simplify SoP</button></div>
+              <div><button type="button" id="submitPOS" class="button btn btn-success nav-item">Simplify PoS</button></div>
+            </div>
+          </li>
+          <li class="nav-item text-center"><button type="button" id="drawExpression" class="button btn btn-success nav-item align-self-center">Draw Boolean Expression</button></li>
+          <li class="nav-item text-center"><div id="output" class="output nav-item"><p class="" id="outputText">Output</p></div></li>
+
+
+          <li class="nav-item">
+            <div class="d-flex justify-content-around">
+              <div><button type="button" id="addInput" class="button btn btn-primary nav-item">Add Input</button></div>
+              <div><button type="button" id="addOutput" class="button btn btn-primary nav-item">Add Output</button></div>
+            </div>
+          </li>
+
+          <li class="nav-item">
+            <div class="d-flex justify-content-around">
+              <div><button type="button" id="not" class="gateButton button btn btn-outline-primary nav-item">NOT Gate</button></div>
+              <div><button type="button" id="and" class="gateButton button btn btn-outline-primary nav-item">AND Gate</button></div>
+            </div>
+          </li>
+
+          <li class="nav-item">
+            <div class="d-flex justify-content-around">
+              <div><button type="button" id="or" class="gateButton button btn btn-outline-primary nav-item">OR Gate</button></div>
+              <div><button type="button" id="nand" class="gateButton button btn btn-outline-primary nav-item">NAND Gate</button></div>
+            </div>
+          </li>
+
+          <li class="nav-item">
+            <div class="d-flex justify-content-around">
+              <div><button type="button" id="nor" class="gateButton button btn btn-outline-primary nav-item">NOR Gate</button></div>
+              <div><button type="button" id="xor" class="gateButton button btn btn-outline-primary nav-item">XOR Gate</button></div>
+            </div>
+          </li>
+
+          <li class="nav-item text-center"><button type="button" id="evaluate" class="button nav-item btn btn-primary">Evaluate Outputs</button></li>
+        </ul>
+      
+      </div>
+
+      <div class="drawingArea col-10 nomargin nopadding" id="canvas-draw">
+          <canvas id="drawingCanvas" class="nomargin"></canvas>
+        </div>
     </div>
     
+    <script src="scripts/camera.js"></script>
     <script src="scripts/boolean-manipulation.js"></script>
     <script src="scripts/canvas-draw.js"></script>
     <script src="scripts/draw-expression.js"></script>
     <script src="scripts/main.js"></script>
+    <script src="scripts/tokeniser.js"></script>
+    <script src="scripts/parser.js"></script>
+    <script src="scripts/tree.js"></script>
+    <script src="scripts/stack.js"></script>
+    <script src="scripts/logic-gates.js"></script>
+    
   </body>
 </html>

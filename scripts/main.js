@@ -1,17 +1,18 @@
 let expSubmit = document.getElementById("submitSOP");
 let posSubmit = document.getElementById("submitPOS");
 
+camera = new Camera();
+
 function simplify(expression, get1s=true) {
     if(expression.length > 0 && checkExpressionFormatting(expression)) {
         expression = checkExpression(expression);
         let partialParsed = partialParse(expression);
-
-        let parsedExpr = parseExpression(partialParsed, []);
-
-        let answerText = QM(parsedExpr, getVariables(partialParsed), get1s);
+        let rpn = genRPN(partialParsed);
+        let tree = genParseTree(rpn);
+        let answerText = QM(tree, getVariables(expression), get1s);
         let output = document.getElementById("outputText");
         output.className = "answer";
-        output.textContent = answerText;
+        output.textContent = (answerText == '' ? "Expression always false!" : answerText);
         return answerText;
     }
 }
@@ -21,11 +22,10 @@ posSubmit.onclick = function() {
     let ansText = simplify(expression, false);
     ansText = checkExpression(ansText);
     let partialParseExpr = partialParse(ansText);
-    //let parsedExpr = parseExpression(partialParseExpr, []);
     let ans = convertToPOS(partialParseExpr);
     let output = document.getElementById("outputText");
     output.className = "answer";
-    output.textContent = ans;
+    output.textContent = (ans == '()' ? 'Expression always false!' : ans);
 }
 
 expSubmit.onclick = function() {

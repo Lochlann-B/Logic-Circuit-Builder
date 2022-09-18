@@ -2,7 +2,6 @@
 
 function QM(booleanFunction, varList, get1s=true) {
     let truthTable = getTruthTable(booleanFunction, varList, get1s);
-    console.log("yeah");
     //Generate a table of all expressions which evaluate to true
     let mintermTable = [];
     for(let i = 0; i < truthTable.length; i++) {
@@ -10,6 +9,9 @@ function QM(booleanFunction, varList, get1s=true) {
             mintermTable.push(truthTable[i].slice(0, truthTable[i].length-1));
         }
     }
+    
+    // No minterms means that the expression is always false, i.e. a&!a
+    if(mintermTable.length == 0) { return ''; }
 
     mintermCopy = JSON.parse(JSON.stringify(mintermTable));
 
@@ -88,133 +90,140 @@ function QM(booleanFunction, varList, get1s=true) {
         mintermTable = combinedMinterms;
         combinedMinterms = [];
 
-}
-
-function getPossibleNums(implicant, implicantArray) {
-    var possibleNums = [];
-    let dashCount = 0;
-    let dashIndexes = [];
-    for(let y = 0; y < implicant.length; y++) {
-
-        if(implicant[y] == '-') {
-            dashCount++;
-            dashIndexes.push(y);
-        }
     }
-    let code = genGreyCode(dashCount);
-    for(let i = 0; i < code.length; i++) {
-        possibleNums.push([]);
-        var count = 0;
-        for(let j = 0; j < implicant.length; j++) {
-            if(dashIndexes.indexOf(j) != -1) {
-                possibleNums[i].push(code[i][count]);
-                count++;
-            }
-            else {
-                possibleNums[i].push(implicant[j]);
-            }
-        }
-    }
-    return possibleNums;
-    
-}
 
-//Create prime implicant table
-implicantChart = [];
-implicants = [];
-for(let i = 0; i < essentialImplicants.length; i++) {
-    implicantChart.push([]); 
-    let implicantArray = [];
-    implicantArray = getPossibleNums(essentialImplicants[i], implicantArray);
-    implicants.push(implicantArray);
-    for(let j = 0; j < mintermCopy.length; j++) {
-        for(let implicant of implicantArray) {
-            if(contentEquals(mintermCopy[j], implicant)) {
-                implicantChart[i][j] = true;
-                break;
-            } else {
-                implicantChart[i][j] = false;
+    function getPossibleNums(implicant, implicantArray) {
+
+        /* Based on every implicant that satisfies the boolean expression, 
+        generate an array of concrete (0s and 1s only) binary numbers which
+        satisfy the boolean expression. */
+
+        var possibleNums = [];
+        let dashCount = 0;
+        let dashIndexes = [];
+        for(let y = 0; y < implicant.length; y++) {
+
+            if(implicant[y] == '-') {
+                dashCount++;
+                dashIndexes.push(y);
             }
         }
+        let code = genGreyCode(dashCount);
+        for(let i = 0; i < code.length; i++) {
+            possibleNums.push([]);
+            var count = 0;
+            for(let j = 0; j < implicant.length; j++) {
+                if(dashIndexes.indexOf(j) != -1) {
+                    possibleNums[i].push(code[i][count]);
+                    count++;
+                }
+                else {
+                    possibleNums[i].push(implicant[j]);
+                }
+            }
+        }
+        return possibleNums;
         
     }
-}
-function scrubTable(row) {
-    var length = implicantChart[row].length;
-    for(let z = 0; z < length; z++) {
-        if(implicantChart[row][z] == 1) {
-            for(let l = 0; l < implicantChart.length; l++) {
-                implicantChart[l].splice(z, 1);
-            }
-            z--;
-            length--;
-        }
-    }
-    implicantChart.splice(row, 1);
-    essentialImplicants.splice(row, 1);
-}
 
-//Search for essential prime implicants
-finalAns = [];
-for(let i = 0; i < implicantChart[0].length; i++) {
-    let index = -1;
-    var unique = 0;
-    for(let j = 0; j < implicantChart.length; j++) {
-        if(implicantChart[j][i] == true) {
-            unique++;
-            index = j;
-        }
-    }
-    if(unique == 1) {
-        finalAns.push(essentialImplicants[index]);
-        scrubTable(index);
-        i--;
-        if(implicantChart.length == 0) {
-            break;
-        }
-    }
-}
-//Get any answer from the remaining implicants
-while(implicantChart.length > 0) {
-    if(implicantChart.length > 0) {
-        if(implicantChart[0].length > 0) {
-            finalAns.push(essentialImplicants[0]);
+    //Create prime implicant table
+    implicantChart = [];
+    implicants = [];
+    for(let i = 0; i < essentialImplicants.length; i++) {
+        implicantChart.push([]); 
+        let implicantArray = [];
+        implicantArray = getPossibleNums(essentialImplicants[i], implicantArray);
+        implicants.push(implicantArray);
+        for(let j = 0; j < mintermCopy.length; j++) {
+            for(let implicant of implicantArray) {
+                if(contentEquals(mintermCopy[j], implicant)) {
+                    implicantChart[i][j] = true;
+                    break;
+                } else {
+                    implicantChart[i][j] = false;
+                }
+            }
             
         }
-        scrubTable(0);
     }
-}
 
-//console.log(finalAns);
+    function scrubTable(row) {
 
-let answer = "(";
-for(let s = 0; s < finalAns.length; s++) {
-    if(s != 0) {
-        answer += ")+(";
-    }
-    let displayCharCount = 0;
-    for(let t = 0; t < varList.length; t++) {
-        
-        
-        if(finalAns[s][t] == false) {
-            if(displayCharCount != 0) {
-                answer += "&";
+        // For a table of implicants (rows) and minterms (columns), and given an implicant which is essential, 
+        // remove the implicant from the table, and also remove all of the minterms that it satisfies.
+
+        var length = implicantChart[row].length;
+        for(let z = 0; z < length; z++) {
+            if(implicantChart[row][z] == 1) {
+                for(let l = 0; l < implicantChart.length; l++) {
+                    implicantChart[l].splice(z, 1);
+                }
+                z--;
+                length--;
             }
-            displayCharCount++;
-            answer += "!" + varList[t];
         }
-        else if(finalAns[s][t] == true) {
-            if(displayCharCount != 0) {
-                answer += "&";
+        implicantChart.splice(row, 1);
+        essentialImplicants.splice(row, 1);
+    }
+
+    //Search for essential prime implicants
+    finalAns = [];
+    for(let i = 0; i < implicantChart[0].length; i++) {
+        let index = -1;
+        var unique = 0;
+        for(let j = 0; j < implicantChart.length; j++) {
+            if(implicantChart[j][i] == true) {
+                unique++;
+                index = j;
             }
-            displayCharCount++;
-            answer += varList[t];
+        }
+        if(unique == 1) {
+            finalAns.push(essentialImplicants[index]);
+            scrubTable(index);
+            i--;
+            if(implicantChart.length == 0) {
+                break;
+            }
         }
     }
-}
-answer += ")";
-//console.log(answer);
-return answer;
+    //Get any answer from the remaining implicants
+    while(implicantChart.length > 0) {
+        if(implicantChart.length > 0) {
+            if(implicantChart[0].length > 0) {
+                finalAns.push(essentialImplicants[0]);
+                
+            }
+            scrubTable(0);
+        }
+    }
+
+    let answer = "(";
+    for(let s = 0; s < finalAns.length; s++) {
+        if(s != 0) {
+            answer += ")+(";
+        }
+        let displayCharCount = 0;
+        for(let t = 0; t < varList.length; t++) {
+            
+            
+            if(finalAns[s][t] == false) {
+                if(displayCharCount != 0) {
+                    answer += "&";
+                }
+                displayCharCount++;
+                answer += "!" + varList[t];
+            }
+            else if(finalAns[s][t] == true) {
+                if(displayCharCount != 0) {
+                    answer += "&";
+                }
+                displayCharCount++;
+                answer += varList[t];
+            }
+        }
+    }
+    answer += ")";
+    return answer;
 
     
 }
@@ -222,19 +231,19 @@ return answer;
 function convertToPOS(partialParsed) {
     for(let i = 0; i < partialParsed.length; i++) {
 
-        switch(partialParsed[i]) {
+        switch(partialParsed[i].getValue()) {
             case '&':
-                partialParsed[i] = '|';
+                partialParsed[i].setValue('|');
                 break;
             case '|':
-                partialParsed[i] = '&';
+                partialParsed[i].setValue('&');
                 break;
             case '!':
                 partialParsed.splice(i, 1);
                 break;
             default:
-                if(partialParsed[i] != '(' && partialParsed[i] != ')') {
-                    partialParsed.splice(i, 0, '!');
+                if(partialParsed[i].getValue() != '(' && partialParsed[i].getValue() != ')') {
+                    partialParsed.splice(i, 0, new Token('o', '!'));
                     i++;
                 }
                 break;
@@ -242,25 +251,13 @@ function convertToPOS(partialParsed) {
     }
     ansString = "";
     for(let symbol of partialParsed) {
-        if(symbol == '|') {
+        if(symbol.getValue() == '|') {
             ansString += '+';
         } else {
-            ansString += symbol;
+            ansString += symbol.getValue();
         }
     }
     return ansString;
-}
-
-function groupNots(parsedExpr) {
-    for(let i = 0; i < parsedExpr.length; i++) {
-        symbol = parsedExpr[i];
-        if(typeof symbol == 'object') {
-            groupNots(symbol);
-        } 
-        else if(symbol == '!') {
-            parsedExpr.splice(i, 2, "!" + parsedExpr[i+1]);
-        }
-    }
 }
 
 function contentEquals(l1, l2) {
@@ -340,90 +337,21 @@ function reverse(list) {
     return copyList;
 }
 
-function partialParse(expr) {
-    return expr.match(/[()!&|]|[\w\s]+/g);
+function getVariables(stringExpression) {
+    return Array.from(new Set(stringExpression.match(/[\w\s]+/g)));
 }
 
-function getVariables(partialParsedExpr) {
-    let varList = [];
-    for(let variable of partialParsedExpr) {
-        if(variable != '(' && variable != ')' && variable != '!' && variable != '|' && variable != '&') {
-            if(varList.indexOf(variable) == -1) {
-                varList.push(variable);
-            }
-        }
+function evaluateExpression(rootNode, values) {
+    switch(rootNode.getValue().getValue()) {
+        case '&':
+            return evaluateExpression(rootNode.getChild(0), values) && evaluateExpression(rootNode.getChild(1), values);
+        case '|':
+            return evaluateExpression(rootNode.getChild(0), values) || evaluateExpression(rootNode.getChild(1), values);
+        case '!':
+            return !evaluateExpression(rootNode.getChild(0), values);
+        default:
+            return values[rootNode.getValue().getValue()];
     }
-    return varList;
-}
-
-function parseExpression(expr, parsedExpr) {
-    if(expr == null || expr == undefined) {
-        return [];
-    }
-    for(let index = 0; index < expr.length; index++) {
-        if(expr[index] == '(') {
-            let group = findGroup(expr.slice(index, expr.length));
-            parsedExpr.push(parseExpression(group, []));
-            index += group.length+1;
-        } else {
-            parsedExpr.push(expr[index]);
-        } 
-    }
-    return parsedExpr;
-}
-
-function evaluateExpression(expression, values) {
-    expr = JSON.parse(JSON.stringify(expression));
-    let index = 0;
-    for(let symbol of expr) {
-        switch(symbol) {
-            case '!':
-                if(typeof(expr[index+1]) == "object") {
-                    
-                     expr.splice(index, 2, !evaluateExpression(expr[index+1], values));
-                }
-                else {
-                    expr.splice(index, 2, !values[expr[index+1]]);
-                }
-                break;
-            case '&':
-                var lhs = expr.slice(0, index);
-                var rhs = expr.slice(index+1, expr.length);
-                return evaluateExpression(lhs, values) && evaluateExpression(rhs, values);
-            case '|':
-                var lhs = expr.slice(0, index);
-                var rhs = expr.slice(index+1, expr.length);
-                return evaluateExpression(lhs, values) || evaluateExpression(rhs, values);
-        }
-        if(expr.length == 1) {
-            if(typeof(expr[0]) == "object") {
-                return evaluateExpression(expr[0], values);
-            }
-            return values[expr[0]];
-        }
-        index++;
-    }
-}
-
-function findGroup(expr) {
-    let bracketCount = 0;
-    let index = 0;
-    for(let symbol of expr) {
-        switch(symbol) {
-            case '(':
-                bracketCount++;
-                break;
-            case ')':
-                bracketCount--;
-                break;
-        }
-        index++;
-        if(bracketCount == 0) {
-            return expr.slice(1, index-1);
-        }
-    }
-    console.log("Error: brackets are not consistent!");
-    return [];
 }
 
 function checkExpression(e) {

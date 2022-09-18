@@ -1,263 +1,109 @@
-class Gate {
-    constructor() {
-        this.inputs = [];
-        this.state = false;
-        this.capacity = -1;
-        this.isFull = false;
-        this.pos = [0, 0];
-        this.outputPos = [0, 0];
-        this.legalPlacement = true;
-    }
+function pathFind(startPos, endPos, path) {
+    let midPos = (startPos[1] == endPos[1] || Math.abs(startPos[0] - endPos[0]) <= 70) ? endPos[0] : (startPos[0] + endPos[0])/2;
 
-    draw() {};
+    // Phase 1: change direction until no more
+    let newMidPoint = [midPos, startPos[1]];
+    collisionInfo = checkLineCollision(startPos, [midPos, startPos[1]]);
+    let mostRecentCollisionType = 'H';
+    while(collisionInfo != undefined) {
 
-    setOutputPos() {};
-
-    addInput(input) {
-        this.inputs.push(input);
-    }
-
-    evaluate() {return state};
-}
-
-class NOTGate extends Gate {
-    constructor() {
-        super();
-        this.capacity = 1;
-        this.outputPos = [50, 50];
-    }
-
-    draw() {
-        let x = this.pos[0];
-        let y = this.pos[1];
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x+50, y+50);
-        ctx.lineTo(x, y+100);
-        ctx.closePath();
-        ctx.strokeStyle = this.legalPlacement ? '#f5f5f5' : '#ff0000';
-        ctx.stroke();
         
-    }
-
-    evaluate() {
-        if(this.inputs.length == 0) {
-            return false;
+        for(let gate of gateList) {
+            
+            //Check to see whether endPos is inside a gate
+            if(endPos[0] > gate.pos[0] && endPos[0] < gate.pos[0] + gate.outputPos[0]
+                && endPos[1] > gate.pos[1] && endPos[1] < gate.pos[1] + 2*gate.outputPos[1]) {
+                    endPos = [collisionInfo[0], collisionInfo[1]];
+                }
         }
-        return !this.inputs[0].evaluate();
-    }
-}
-
-class ANDGate extends Gate {
-    constructor() {
-        super();
-        this.outputPos = [50, 50];
-    }
-
-    draw() {
-        let x = this.pos[0];
-        let y = this.pos[1];
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.moveTo(x, y+50);
-        ctx.arc(x, y+50, 50, Math.PI/2, -Math.PI/2, true);
-        ctx.closePath();
-        ctx.strokeStyle = this.legalPlacement ? '#f5f5f5' : '#ff0000';
-        ctx.stroke();
         
-    }
 
-    evaluate() {
-        for(let input of this.inputs) {
-            if(!input.evaluate()) {
-                return false;
+        let turningPoint = [collisionInfo[0], collisionInfo[1]];
+        if(collisionInfo[3] == 'V') {
+            mostRecentCollisionType = 'V';
+            let newX = 0;
+            if(startPos[0] > endPos[0]) {
+                newX = collisionInfo[2].pos[0] - 5;
+            } else {newX = collisionInfo[2].pos[0] + collisionInfo[2].outputPos[0];}
+            
+            let turningPoint2 = [newX, collisionInfo[1]];
+            path.push(turningPoint, turningPoint2);
+
+            newMidPoint = [newX, endPos[1]];
+            collisionInfo = checkLineCollision(turningPoint2, newMidPoint);
+        }
+        else {
+            mostRecentCollisionType = 'H';
+            let newY = collisionInfo[2].pos[1];
+            newY += (endPos[1] >= collisionInfo[2].pos[1]+collisionInfo[2].outputPos[1]) ? 2*collisionInfo[2].outputPos[1] + 5 : - 5;
+            let adjustedX = collisionInfo[0] > collisionInfo[2].pos[0] ? collisionInfo[0] + 1 : collisionInfo[0] - 5
+            let turningPoint2 = [adjustedX, newY];
+            path.push([adjustedX, turningPoint[1]], turningPoint2);
+
+            newMidPoint = [(adjustedX + endPos[0])/2, newY];
+            collisionInfo = checkLineCollision(turningPoint2, newMidPoint);
+        }
+    }
+    // Phase 2: Try and reach destination
+    path.push(newMidPoint);
+    if(mostRecentCollisionType == 'H') {
+        let nextPos = [newMidPoint[0], endPos[1]];
+        collisionInfo = checkLineCollision(newMidPoint, nextPos);
+        while(collisionInfo != undefined) {
+            for(let gate of gateList) {
+            
+                //Check to see whether endPos is inside a gate
+                if(endPos[0] > gate.pos[0] && endPos[0] < gate.pos[0] + gate.outputPos[0]
+                    && endPos[1] > gate.pos[1] && endPos[1] < gate.pos[1] + 2*gate.outputPos[1]) {
+                        endPos = [collisionInfo[0], collisionInfo[1]];
+                    }
             }
+            
+            let turningPoint = [collisionInfo[0], collisionInfo[1]];
+            let newX = 0;
+            if(startPos[0] > endPos[0]) {
+                newX = collisionInfo[2].pos[0] - 5;
+            } else {newX = collisionInfo[2].pos[0] + collisionInfo[2].outputPos[0];}
+            let turningPoint2 = [newX, collisionInfo[1]];
+            path.push(turningPoint, turningPoint2);
+
+            nextPos = [newX, endPos[1]];
+            collisionInfo = checkLineCollision(turningPoint2, nextPos);
         }
-        return true;
+        path.push(nextPos);
+    }
+    // Assert: the path's y-coordinate is now equal to the destination's
+    if(path[path.length - 1][0] != endPos[0]) {
+        return pathFind(path[path.length - 1], endPos, path);
+    } else {
+        return path;
     }
 }
 
-class XORGate extends Gate {
-    constructor() {
-        super();
-        this.capacity = 2;
-        this.outputPos = [70, 40];
-    }
-
-    draw() {
-        let x = this.pos[0];
-        let y = this.pos[1];
-        ctx.strokeStyle = this.legalPlacement ? '#f5f5f5' : '#ff0000';
-        ctx.beginPath();
-        ctx.moveTo(x, y+80);
-        ctx.bezierCurveTo(x+25, y+60, x+25, y+20, x, y);
-        ctx.stroke();
-
-        ctx.moveTo(x+10, y+80);
-        ctx.bezierCurveTo(x+35, y+60, x+35, y+20, x+10, y);
-        ctx.stroke();
-
-        ctx.moveTo(x+10, y+80);
-        ctx.bezierCurveTo(x+15, y+80, x+55, y+80, x+70, y+40);
-        ctx.stroke();
-
-        ctx.moveTo(x+10, y);
-        ctx.bezierCurveTo(x+15, y, x+55, y, x+70, y+40);
-        ctx.stroke();
-        
-    }
-
-    evaluate() {
-        if(this.inputs.length < 2) {
-            return false;
-        }
-        let a = this.inputs[0].evaluate();
-        let b = this.inputs[1].evaluate();
-        return ((!a)&&(b))||((a)&&(!b));
-    }
-}
-
-class ORGate extends Gate {
-    constructor() {
-        super();
-        this.outputPos = [60, 40];
-    }
-
-    draw() {
-        let x = this.pos[0];
-        let y = this.pos[1];
-        ctx.beginPath();
-        ctx.moveTo(x, y+80);
-        ctx.bezierCurveTo(x+25, y+60, x+25, y+20, x, y);
-        ctx.strokeStyle = this.legalPlacement ? '#f5f5f5' : '#ff0000';
-        ctx.stroke();
-
-        ctx.moveTo(x, y+80);
-        ctx.bezierCurveTo(x+5, y+80, x+45, y+80, x+60, y+40);
-        ctx.stroke();
-
-        ctx.moveTo(x, y);
-        ctx.bezierCurveTo(x+5, y, x+45, y, x+60, y+40);
-        ctx.stroke();
-    }
-
-    evaluate() {
-        for(let input of this.inputs) {
-            if(input.evaluate()) {
-                return true;
+function checkLineCollision(startPos, endPos) {
+    // TODO: check for intersection between a straight line segment and any gate - return earliest such point of collision (on the gate), and the gate itself
+    // Assert: A collision is only found along a horizontal line
+    
+    let start = Math.min(startPos[0], endPos[0]);
+    let end = Math.max(startPos[0], endPos[0]);
+    for(let gate of gateList) {
+        // More work is needed for vertical line intersections since they can come from above or below
+        if(
+            start > gate.pos[0] && start < gate.pos[0] + gate.outputPos[0] &&
+            ((startPos[1] > gate.pos[1] + 2*gate.outputPos[1] && endPos[1] < gate.pos[1] + 2*gate.outputPos[1]) ||
+              (startPos[1] <= gate.pos[1] && endPos[1] > gate.pos[1]))) {
+                let intersectYPoint = startPos[1] > gate.pos[1] ? (gate.pos[1] + 2*gate.outputPos[1]) : (gate.pos[1]) ;
+                return [startPos[0], intersectYPoint, gate, 'V'];
+              }
+        // Horizontal line detection
+        if(
+            startPos[1] > gate.pos[1] && startPos[1] < gate.pos[1] + 2*gate.outputPos[1] &&
+            ((start < gate.pos[0] && end > gate.pos[0]) || (start > gate.pos[0] && start < gate.pos[0] + gate.outputPos[0])
+            || (end > gate.pos[0] && end < gate.pos[0] + gate.outputPos[0]) || (start < gate.pos[0] + gate.outputPos[0] && end >= gate.pos[0] + gate.outputPos[0]))) {
+                return [startPos[0] > gate.pos[0] ? gate.pos[0] + gate.outputPos[0] : gate.pos[0], startPos[1], gate, 'H'];
             }
-        }
-        return false;
-    }
-}
-
-class NORGate extends ORGate {
-    constructor() {
-        super();
-        this.outputPos = [70, 40];
-    }
-
-    draw() {
-        let x = this.pos[0];
-        let y = this.pos[1];
-        super.draw(x, y);
-        ctx.moveTo(x+70, y+40);
-        ctx.arc(x+65, y+40, 5, 0, Math.PI*2);
-        ctx.strokeStyle = this.legalPlacement ? '#f5f5f5' : '#ff0000';
-        ctx.stroke();
         
-    }
 
-    evaluate() {
-        return !super.evaluate();
-    }
-}
-
-class NANDGate extends ANDGate {
-    constructor() {
-        super();
-        this.outputPos = [60, 50];
-    }
-
-    draw() {
-        let x = this.pos[0];
-        let y = this.pos[1];
-        super.draw(x, y);
-        ctx.moveTo(x+60, y+50);
-        ctx.arc(x+55, y+50, 5, 0, Math.PI*2);
-        ctx.strokeStyle = this.legalPlacement ? '#f5f5f5' : '#ff0000';
-        ctx.stroke();
-    }
-
-    evaluate() {
-        return !super.evaluate();
-    }
-}
-
-class Input {
-    constructor(x, y) {
-        this.state = false;
-        this.pos = [x, y];
-    }
-
-    draw() {
-        let x = this.pos[0];
-        let y = this.pos[1];
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.arc(x-10, y, 10, 0, Math.PI*2);
-        ctx.strokeStyle = this.state ? '#00f500' : '#f50000';
-        ctx.stroke();
-    }
-
-    evaluate() {
-        return this.state;
-    }
-}
-
-class Output {
-    constructor(x, y) {
-        this.pos = [x,y];
-        this.input;
-    }
-
-    getState() {
-        return this.input.state;
-    }
-
-    draw() {
-        let x = this.pos[0];
-        let y = this.pos[1];
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.arc(x-10, y, 10, 0, Math.PI*2);
-        ctx.strokeStyle = this.state ? '#00f500' : '#f50000';
-        ctx.stroke();
-    }
-}
-
-class Connection {
-    constructor(position) {
-        this.startPos = [0, 0];
-        this.endPos = [0, 0];
-        this.startGate;
-        this.endGate;
-        this.legalPlacement = false;
-        this.position = position;
-    }
-
-    draw(connectList) {
-        let startPos = this.startPos;
-        let endPos = this.endPos;
-        ctx.strokeStyle = this.legalPlacement ? '#f5f5f5' : '#f50000';
-        ctx.beginPath();
-        ctx.moveTo(startPos[0], startPos[1]);
-        let midPos = startPos[0] + (endPos[0]-startPos[0])*(1 - this.position*0.1);
-        midPos = midPos > startPos[0] ? midPos : startPos[0];
-        ctx.lineTo(midPos, startPos[1]);
-        ctx.lineTo(midPos, endPos[1]);
-        ctx.lineTo(endPos[0], endPos[1]);
-        ctx.stroke();
     }
 }
 
@@ -300,14 +146,6 @@ function checkConnectionPlacement(connection, gateList, outputList) {
     }
 }
 
-function evaluateOutputs(outputs) {
-    for(let output of outputs) {
-        if(output.input != null && output.input != undefined) {
-            output.state = output.input.evaluate();
-        }
-    }
-}
-
 function setupGate(gate, gatelist) {
     if(selectedGate == null || selectedGate == undefined) {
         gate.pos[0] = x;
@@ -319,12 +157,24 @@ function setupGate(gate, gatelist) {
 
 function adjustConnections() {
     for(let connection of connectionList) {
-        if(connection.startGate instanceof Input) {
-            connection.startPos[1] = connection.startGate.pos[1];
+       connection.startPos[1] = connection.startGate.pos[1] + connection.startGate.outputPos[1];
+       connection.endPos[1] = connection.endGate.pos[1];
+       tidyUpGates();
+       connection.setPath();
+    }
+}
+
+function tidyUpGates() {
+    for(let gate of gateList) {
+        let startY = gate.pos[1] + 5;
+        let endY = gate.pos[1] + 2*gate.outputPos[1] - 5;
+        let increment = (endY - startY)/(gate.inputs.length);
+
+        for(let i = 0; i < gate.inputs.length; i++) {
+            var startPoint = (gate.inputs.length % 2 == 0) ? -(increment/2)*(gate.inputs.length - 1) : -increment*((gate.inputs.length-1)/2);
+            gate.inputs[i].endPos[1] = gate.pos[1] + gate.outputPos[1] - startPoint - (i)*increment;
         }
-        if(connection.endGate instanceof Output) {
-            connection.endPos[1] = connection.endGate.pos[1];
-        }
+
     }
 }
 
@@ -367,25 +217,6 @@ function clear() {
     gateList = [];
 }
 
-function getNOTGate() {
-    return new NOTGate();
-}
-function getANDGate() {
-    return new ANDGate();
-}
-function getORGate() {
-    return new ORGate();
-}
-function getNORGate() {
-    return new NORGate();
-}
-function getNANDGate() {
-    return new NANDGate();
-}
-function getXORGate() {
-    return new XORGate();
-}
-
 function addGate(gate) {
     gateList.push(gate);
 }
@@ -399,20 +230,20 @@ function addConnection(startGate, endGate) {
     connection.startGate = startGate;
     connection.endGate = endGate;
     connection.legalPlacement = true;
-    if(startGate instanceof Input) {
+    if(startGate instanceof Input) {    
         connection.startPos = startGate.pos;
     } else {
         connection.startPos = [startGate.pos[0] + startGate.outputPos[0], startGate.pos[1] + startGate.outputPos[1]];
     }
     if(endGate instanceof Output) {
-        endGate.input = startGate;
+        endGate.input = connection;
     } else {
-        endGate.inputs.push(startGate);
+        endGate.inputs.push(connection);
     }
     if(endGate instanceof Output) {
-        connection.endPos = endGate.pos;
+        connection.setEndPos(endGate.pos);
     } else {
-        connection.endPos = [endGate.pos[0], endGate.pos[1] + 10*endGate.inputs.length];
+        connection.setEndPos([endGate.pos[0], endGate.pos[1] + 10*endGate.inputs.length]);
     }
     connection.position = connectionList.length+1;
     connectionList.push(connection);
@@ -427,27 +258,66 @@ function getOutput(index) {
 }
 
 /* TODO:
-ALSO: MAKE IT SO *, + AND ' NOTATION IS LEGAL (JUST GO THROUGH STRING AND REPLACE THE CHARACTERS, AND MOVE THE ! TO THE OTHER SIDE OF THE CHAR SET)
+ALSO: ' NOTATION IS LEGAL (MOVE THE ! TO THE OTHER SIDE OF THE CHAR SET)
 */
 
+// Setup canvas and user interaction events
+
 const canvas = document.getElementById("drawingCanvas");
-var width = canvas.width = window.innerWidth*0.9;
-var height = canvas.height = window.innerHeight*0.85;
+var width = canvas.width = document.getElementById("canvas-draw").offsetWidth;
+var height = canvas.height = window.innerHeight;
 const ctx = canvas.getContext('2d');
 var selectedGate;
 var selectedConnection;
 
+var mouseClicked = false;
+var startMousePos = [0, 0];
+var startCameraPos = [0, 0];
+
+canvas.addEventListener('wheel', e => {
+    camera.setZoom(Math.max(0.001, camera.getZoom() - e.deltaY/500));
+})
+
+canvas.addEventListener('mousedown', () => {
+    if(!mouseClicked) {
+        console.log("ye");
+        startMousePos = [x, y];
+        startCameraPos = [camera.getX(), camera.getY()];
+    }
+    mouseClicked = true;
+});
+
+canvas.addEventListener('mouseup', () => {
+    mouseClicked = false;
+    console.log("na")
+});
+
+canvas.addEventListener('mousemove', () => {
+    if(mouseClicked) {
+        camera.setX(startCameraPos[0] + startMousePos[0] - x);
+        camera.setY(startCameraPos[1] + startMousePos[1] - y);
+    }
+});
+
 canvas.addEventListener('click', () => {
+
+    // Place a new gate
     if(selectedGate != null && selectedGate != undefined && selectedGate.legalPlacement) {
         selectedGate = null;
+        for(let connection of connectionList) {
+            connection.setPath();
+        }
     }
+
+    // Set selected connection
     if(selectedConnection != null && selectedConnection != undefined ) {
         if(selectedConnection.legalPlacement) {
             selectedConnection.endPos[0] = selectedConnection.endGate.pos[0];
+            selectedConnection.setPath();
             if(selectedConnection.endGate instanceof Output) {
-                selectedConnection.endGate.input = selectedConnection.startGate;
+                selectedConnection.endGate.input = selectedConnection;
             } else {
-                selectedConnection.endGate.inputs.push(selectedConnection.startGate);
+                selectedConnection.endGate.inputs.push(selectedConnection);
             }
             selectedConnection = null;
         }
@@ -456,30 +326,35 @@ canvas.addEventListener('click', () => {
             selectedConnection = null;
         }
     }
+
+    // Toggle clicked inputs
     for(let input of inputList) {
-        if(x > input.pos[0] - 10 && x < input.pos[0] + 10 && y < input.pos[1] + 10 && y > input.pos[1]  - 10) {
+        if(unprojX > input.pos[0] - 10 && unprojX < input.pos[0] + 10 && unprojY < input.pos[1] + 10 && unprojY > input.pos[1]  - 10) {
             input.state = !input.state;
         }
     }
+
 });
 
 window.onresize = function() {
-    height = canvas.height = window.innerHeight*0.85; 
-    width = canvas.width = window.innerWidth*0.9;
+    height = canvas.height = window.innerHeight; 
+    width = canvas.width = window.innerWidth*(10/12);
 }
 
 var x;
 var y;
+var unprojX;
+var unprojY;
+
+
 document.querySelector('html').onmousemove = function(event) {
-    x = Math.floor(event.clientX - width*0.1);
+    x = Math.floor(event.clientX - canvas.getBoundingClientRect().left);
     y = event.clientY;
+    console.log(x)
+    unprojX = camera.unprojectX(x);
+    unprojY = camera.unprojectY(y);
 }
-document.getElementById('bin').onclick = function() {
-    if(selectedGate != null && selectedGate != undefined) {
-        gateList.splice(gateList.indexOf(selectedGate), 1);
-        selectedGate = null;
-    }
-}
+
 document.getElementById('evaluate').onclick = function() {
     evaluateOutputs(outputList);
 }
@@ -487,27 +362,29 @@ document.getElementById('evaluate').onclick = function() {
 var keydownC = false;
 var keydownD = false;
 document.addEventListener('keydown', (event) => {
-    const keyName = event.key;
+    const keyName = event.key; 
     
     if(!keydownC && (keyName == 'c' || keyName == 'C') && (selectedConnection == null || selectedConnection == undefined)) {
         keydownC = true;
         for(let input of inputList) {
-            if(x > input.pos[0] - 10 && x < input.pos[0] + 10 && y < input.pos[1] + 10 && y > input.pos[1]  - 10) {
+            if(x > camera.projectX(input.pos[0] - 10) && x < camera.projectX(input.pos[0] + 10) 
+                && y < camera.projectY(input.pos[1] + 10) && y > camera.projectY(input.pos[1]  - 10)) {
                 var connection = new Connection(connectionList.length+1);
                 connection.startPos = [input.pos[0], input.pos[1]];
-                connection.endPos = [x, y];
+                connection.setEndPos([x, y]);
                 selectedConnection = connection;
                 connectionList.push(connection);
                 connection.startGate = input;
             }
         }
         for(let gate of gateList) {
-            if(x > gate.pos[0] + gate.outputPos[0] - 20 && x < gate.pos[0] + gate.outputPos[0] + 20 && y > gate.pos[1] + gate.outputPos[1] - 20 && y < gate.pos[1] + gate.outputPos[1] + 20) {
+            if(x > camera.projectX(gate.pos[0] + gate.outputPos[0] - 20) && x < camera.projectX(gate.pos[0] + gate.outputPos[0] + 20)
+                && y > camera.projectY(gate.pos[1] + gate.outputPos[1] - 20) && y < camera.projectY(gate.pos[1] + gate.outputPos[1] + 20)) {
                 let xCoord = gate.pos[0] + gate.outputPos[0];
                 let yCoord = gate.pos[1] + gate.outputPos[1];
                 var connection = new Connection(connectionList.length + 1);
                 connection.startPos = [xCoord, yCoord];
-                connection.endPos = [x, y];
+                connection.setEndPos([x, y]);
                 selectedConnection = connection;
                 connectionList.push(connection);
                 connection.startGate = gate;
@@ -519,26 +396,20 @@ document.addEventListener('keydown', (event) => {
         keyDownD = true;
         for(let j = 0; j < gateList.length; j++) {
             let gate = gateList[j];
-            if(x > gate.pos[0] && x < gate.pos[0] + gate.outputPos[0] && y > gate.pos[1] && y < gate.pos[1] + 2*gate.outputPos[1]) {
+            if(x > camera.projectX(gate.pos[0]) && x < camera.projectX(gate.pos[0] + gate.outputPos[0]) 
+                && y > camera.projectY(gate.pos[1]) && y < camera.projectY(gate.pos[1] + 2*gate.outputPos[1])) {
+
                 for(let i = 0; i < connectionList.length; i++) {
-                    let startgate = connectionList[i].startGate;
-                    let endgate = connectionList[i].endGate;
-                    if(startgate.pos[0] == gate.pos[0] && startgate.pos[1] == gate.pos[1] || endgate.pos[0] == gate.pos[0] && endgate.pos[1] == gate.pos[1]) {
-                        if(endgate instanceof Output) {
-                            endgate.input = null;
-                        } else {
-                            let inputs = endgate.inputs;
-                            for(let k = 0; k < inputs.length; k++) {
-                                if(inputs[k].pos[0] == startgate.pos[0] && inputs[k].pos[1] == startgate.pos[1]) {
-                                    inputs.splice(k, 1);
-                                    k--;
-                                }
-                            }
-                        }
+                    let connection = connectionList[i];
+                    if(connection.startGate == gate || connection.endGate == gate) {
+                        let outGate = connection.endGate
+                        if(outGate instanceof Output) { outGate.input = undefined }
+                        else { outGate.inputs.splice(outGate.inputs.indexOf(gate), 1); }
                         connectionList.splice(i, 1);
                         i--;
                     }
                 }
+
                 gateList.splice(j, 1);
             }
             
@@ -578,31 +449,24 @@ document.getElementById('addOutput').onclick = function() {
 }
 
 function loop() {
-    ctx.fillStyle = 'rgb(0,0,0)';
+    ctx.fillStyle = 'rgb(26,26,26)';
     
     if(selectedGate != undefined && selectedGate != null) {
-        selectedGate.pos[0] = x;
-        selectedGate.pos[1] = y;
+        selectedGate.pos[0] = unprojX;
+        selectedGate.pos[1] = unprojY;
         checkLegalPlacement(selectedGate, gateList);
     }
     if(selectedConnection != undefined && selectedConnection != null) {
-        selectedConnection.endPos[0] = x;
-        selectedConnection.endPos[1] = y;
+        selectedConnection.endPos[0] = unprojX;
+        selectedConnection.endPos[1] = unprojY;
+        selectedConnection.setPath();
         checkConnectionPlacement(selectedConnection, gateList, outputList);
     }
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    for(let input of inputList) {
-        input.draw();
-    }
-    for(let gate of gateList) {
-        gate.draw();
-    }
-    for(let connection of connectionList) {
-        connection.draw(connectionList);
-    }
-    for(let output of outputList) {
-        output.draw();
-    }
+    for(let input of inputList) { input.draw(); }
+    for(let gate of gateList) { gate.draw(); }
+    for(let connection of connectionList) { connection.draw(connectionList); }
+    for(let output of outputList) { output.draw(); }
     requestAnimationFrame(loop);
 }
 loop();
