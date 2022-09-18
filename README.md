@@ -1,10 +1,14 @@
-# Logic Circuit Creator
+![](/screenshots/screenshot.png?raw=true)
+
+# Logic Circuit Builder
 Website for designing and testing logic circuits.
 
 Uses QM method for logic simplification. Circles on the left are inputs, and circles on the right are outputs. Click on inputs to change their state (red = off, green = on).
 
 When entering an expression into the simplifier, use **&** or **\*** for logical AND, and **|** or **+** for logical OR.
 Order of operations are as follows, from highest-precedence to least-precedence: () ! & +
+
+There is no limit on the number of variables, so expect it to slow down/stop for large expressions as the QM method is exponential in complexity
 
 Website at https://lochlann-b.github.io/Logic-Circuit-Builder/
 
