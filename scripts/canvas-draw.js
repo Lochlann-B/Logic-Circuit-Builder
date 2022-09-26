@@ -275,12 +275,27 @@ var startMousePos = [0, 0];
 var startCameraPos = [0, 0];
 
 canvas.addEventListener('wheel', e => {
-    camera.setZoom(Math.max(0.001, camera.getZoom() - e.deltaY/500));
+    // Zoom in or out about the mouse's current position
+
+    let oldunProjX = unprojX;
+    let oldunProjY = unprojY;
+    
+    let zoom = Math.max(0.05, camera.getZoom() - e.deltaY/500)
+    camera.setZoom(zoom);
+    
+    // First, find the difference in world coordinates of the world-mouse coordinates
+    unprojX = camera.unprojectX(x);
+    unprojY = camera.unprojectY(y);
+    camera.setX(camera.getX() + (oldunProjX - unprojX));
+    camera.setY(camera.getY() + (oldunProjY - unprojY));
+    // Then, reset the unprojected mouse coordinates now that the camera has been shifted
+    unprojX = camera.unprojectX(x);
+    unprojY = camera.unprojectY(y);
+    
 })
 
 canvas.addEventListener('mousedown', () => {
     if(!mouseClicked) {
-        console.log("ye");
         startMousePos = [x, y];
         startCameraPos = [camera.getX(), camera.getY()];
     }
@@ -289,7 +304,6 @@ canvas.addEventListener('mousedown', () => {
 
 canvas.addEventListener('mouseup', () => {
     mouseClicked = false;
-    console.log("na")
 });
 
 canvas.addEventListener('mousemove', () => {
@@ -350,7 +364,7 @@ var unprojY;
 document.querySelector('html').onmousemove = function(event) {
     x = Math.floor(event.clientX - canvas.getBoundingClientRect().left);
     y = event.clientY;
-    console.log(x)
+    
     unprojX = camera.unprojectX(x);
     unprojY = camera.unprojectY(y);
 }
